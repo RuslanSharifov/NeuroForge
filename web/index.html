@@ -22,7 +22,7 @@ textarea{min-height:95px;resize:vertical}.toolbar{display:flex;gap:8px;flex-wrap
 <div class="shell"><nav>
 <button class="tab active" data-tab="chat">Söhbət</button>
 <button class="tab" data-tab="knowledge">Bilik CRUD</button>
-<button class="tab" data-tab="feedback">Geribildirim</button>
+<button class="tab" data-tab="feedback">Geribildirim</button><button class="tab" data-tab="skills">Skill-lər</button>
 </nav><main>
 <div id="notice" role="status"></div>
 <section class="panel active" id="chat"><h2>AI ilə söhbət</h2><div id="conversation"></div>
@@ -39,20 +39,22 @@ textarea{min-height:95px;resize:vertical}.toolbar{display:flex;gap:8px;flex-wrap
 <label for="feedbackAnswer">Düzgün cavab</label><textarea id="feedbackAnswer" required></textarea>
 <div class="toolbar"><button class="primary">Təklif göndər</button></div></form>
 <h2 style="margin-top:25px">Gözləyən düzəlişlər</h2><div id="feedbackList"></div></section>
-</main></div>
+<section class="panel" id="skills"><h2>GitHub skill import</h2><p class="muted">Yalnız GitHub-da yerləşən .md faylları import edilir. Skill-lər əvvəl deaktiv olur; kod icra edilmir.</p><form id="skillForm"><label for="skillUrl">GitHub blob URL (SKILL.md)</label><input id="skillUrl" type="url" required placeholder="https://github.com/owner/repo/blob/main/path/SKILL.md"><div class="toolbar"><button class="primary">Import et</button></div></form><div id="skillList"></div></section></main></div>
 <script>
 const $=id=>document.getElementById(id);
 function notify(s,error=false){$('notice').textContent=s;$('notice').style.color=error?'#fda4af':'#9ee8c4'}
 async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});const d=await r.json();if(!r.ok)throw Error(typeof d.detail==='string'?d.detail:JSON.stringify(d.detail));return d}
 function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
 function btn(text,handler){const b=node('button','',text);b.type='button';b.onclick=handler;return b}
-document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='knowledge')loadKnowledge();if(b.dataset.tab==='feedback')loadFeedback()});
-$('chatForm').onsubmit=async e=>{e.preventDefault();const text=$('message').value.trim();if(!text)return;$('message').value='';$('conversation').append(node('div','message me',text));try{const d=await api('/chat',{method:'POST',body:JSON.stringify({message:text})});$('conversation').append(node('div','message',d.answer+'\nMənbə: '+(d.source_id??'yoxdur')+' · Uyğunluq: '+d.confidence))}catch(err){notify(err.message,true)}$('conversation').scrollTop=$('conversation').scrollHeight};
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='knowledge')loadKnowledge();if(b.dataset.tab==='feedback')loadFeedback();if(b.dataset.tab==='skills')loadSkills()});
+$('chatForm').onsubmit=async e=>{e.preventDefault();const text=$('message').value.trim();if(!text)return;$('message').value='';$('conversation').append(node('div','message me',text));try{const d=await api('/agent/chat',{method:'POST',body:JSON.stringify({message:text})});$('conversation').append(node('div','message',d.answer+(d.mode==='local_llm'?'\nModel: '+d.model:'\nRejim: '+d.mode)))}catch(err){notify(err.message,true)}$('conversation').scrollTop=$('conversation').scrollHeight};
 function resetForm(){$('knowledgeForm').reset();$('knowledgeId').value='';$('category').value='general'}
 $('cancelEdit').onclick=resetForm;
 $('knowledgeForm').onsubmit=async e=>{e.preventDefault();const id=$('knowledgeId').value;const body={question:$('question').value,answer:$('answer').value,category:$('category').value};try{await api(id?'/knowledge/'+id:'/knowledge',{method:id?'PATCH':'POST',body:JSON.stringify(body)});resetForm();notify('Bilik yadda saxlandı');loadKnowledge()}catch(err){notify(err.message,true)}};
 async function loadKnowledge(){try{const rows=await api('/knowledge');const wrap=$('knowledgeList');wrap.replaceChildren();if(!rows.length)wrap.append(node('p','muted','Hələ bilik yoxdur'));rows.forEach(r=>{const el=node('div','item');el.append(node('strong','',r.question),node('p','',r.answer),node('small','',r.category+' · '+(r.enabled?'Aktiv':'Deaktiv')));el.append(btn('Redaktə et',()=>{$('knowledgeId').value=r.id;$('question').value=r.question;$('answer').value=r.answer;$('category').value=r.category;window.scrollTo({top:0,behavior:'smooth'})}),btn(r.enabled?'Deaktiv et':'Aktiv et',async()=>{await api('/knowledge/'+r.id,{method:'PATCH',body:JSON.stringify({enabled:!r.enabled})});loadKnowledge()}),btn('Sil',async()=>{if(confirm('Bilik silinsin?')){await api('/knowledge/'+r.id,{method:'DELETE'});loadKnowledge()}}));wrap.append(el)})}catch(err){notify(err.message,true)}}
 $('feedbackForm').onsubmit=async e=>{e.preventDefault();try{await api('/feedback',{method:'POST',body:JSON.stringify({prompt:$('feedbackPrompt').value,suggested_answer:$('feedbackAnswer').value})});e.target.reset();notify('Düzəliş gözləməyə əlavə olundu');loadFeedback()}catch(err){notify(err.message,true)}};
 async function loadFeedback(){try{const rows=await api('/feedback');const wrap=$('feedbackList');wrap.replaceChildren();rows.filter(r=>!r.approved).forEach(r=>{const el=node('div','item');el.append(node('strong','',r.prompt),node('p','',r.suggested_answer),btn('Təsdiqlə',async()=>{await api('/feedback/'+r.id+'/approve',{method:'POST'});notify('Təsdiqləndi');loadFeedback()}));wrap.append(el)});if(!wrap.children.length)wrap.append(node('p','muted','Gözləyən düzəliş yoxdur'))}catch(err){notify(err.message,true)}}
+$('skillForm').onsubmit=async e=>{e.preventDefault();try{await api('/agent/skills/import',{method:'POST',body:JSON.stringify({url:$('skillUrl').value})});notify('Skill import edildi, aktivləşdirmədən əvvəl mənbəni yoxla');loadSkills()}catch(err){notify(err.message,true)}};
+async function loadSkills(){try{let rows=await api('/agent/skills');let wrap=$('skillList');wrap.replaceChildren();rows.forEach(r=>{let el=node('div','item');el.append(node('strong','',r.name),node('p','muted',r.source),btn(r.active?'Deaktiv et':'Aktiv et',async()=>{await api('/agent/skills/'+r.id+'/activate',{method:'POST',body:JSON.stringify({active:!r.active})});loadSkills()}));wrap.append(el)});if(!rows.length)wrap.append(node('p','muted','Hələ skill yoxdur'))}catch(err){notify(err.message,true)}}
 loadKnowledge();
 </script></body></html>
