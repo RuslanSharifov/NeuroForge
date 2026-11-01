@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from language import get_language,set_language,LANGS
 from model_server import ensure_local_llm
 from doctor import describe, check_update, install_server, download_model, VERSION
 from agent_runtime import agent_run, pending_edits, decide_edit
@@ -116,7 +117,8 @@ def agent_talk():
         return
     print("Geri dönmək üçün /exit yaz.")
     while True:
-        message=ask("Sən")
+        message=ask("Sən",True)
+        if not message:continue
         if message.lower() in ("/exit","/quit"): return
         try:
             result=agent_run(message)
@@ -165,11 +167,20 @@ def maintenance():
         if not info["model_ready"]:download_model()
     pause()
 
+def language_menu():
+    header("Cavab dili")
+    print("Hazırda:",LANGS[get_language()])
+    print("1 Azərbaycan dili  2 Türkçe  3 Avtomatik")
+    choice=ask("Seçim")
+    choice={"1":"az","2":"tr","3":"auto"}.get(choice)
+    if choice: print("Seçildi:",LANGS[set_language(choice)])
+    pause()
+
 def main():
     with db(): pass
     while True:
         header("Local AI")
-        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  AI Agent (söhbət + kod alətləri)\n7  GitHub skill-lər\n8  Versiya və qurulum\n0  Çıxış")
+        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  AI Agent (söhbət + kod alətləri)\n7  GitHub skill-lər\n8  Versiya və qurulum\n9  Cavab dili\n0  Çıxış")
         print("─"*width())
         choice=ask("Seçimin")
         if choice=="1": talk()
@@ -180,6 +191,7 @@ def main():
         elif choice=="6": agent_talk()
         elif choice=="7": skill_menu()
         elif choice=="8": maintenance()
+        elif choice=="9": language_menu()
         elif choice=="0": break
         else: print("Yanlış seçim");pause()
 
