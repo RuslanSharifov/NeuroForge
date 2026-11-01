@@ -2,7 +2,7 @@
 
 Local-first AI knowledge engine with a mobile-friendly browser dashboard and adaptive terminal UI for **Android Termux, Windows CMD / PowerShell, Linux and macOS**.
 
-> **MVP limitation:** NeuroForge currently stores and retrieves taught Q&A/rules using lexical matching. It is **not yet** a pretrained or self-trained LLM. The Gemini and Ollama adapters and neural training are planned, not implemented.
+> **Important:** The default Q&A mode still uses lexical matching. The new **optional local LLM chat** uses an externally installed Ollama-compatible local model to understand natural language, typos and code questions. It preserves conversation history and incorporates approved knowledge. It does **not** train neural weights autonomously. The Gemini adapter, automatic self-training and repository code-editing agent are not implemented.
 
 ## Requirements
 
@@ -104,3 +104,39 @@ Run the stdlib core tests using `python -m unittest discover -s checks -v`. Opti
 The default `python tui.py` and `python server.py` use only Python's standard library. You do **not** need Rust, maturin, FastAPI or Pydantic. Update your clone using `git pull --ff-only` then launch either command. The optional FastAPI stack is isolated in `requirements-web.txt` for environments where Pydantic wheels are available.
 
 For Termux, keep the repository in Termux home (`~/NeuroForge`) where possible; Android shared storage can have executable/symlink limitations.
+
+## Conversational AI + local model (optional)
+
+The new terminal menu item **6 — Lokal LLM söhbəti** and web chat path `/agent/chat` use an Ollama-compatible local server. You must install/run a compatible model separately. This feature has **no paid API requirement**, but models consume storage and RAM. Running a local LLM directly on Android Termux depends on device hardware and availability of a compatible runtime; don't assume desktop Ollama instructions work unmodified on Android.
+
+Desktop example, after installing Ollama:
+```bash
+ollama pull qwen2.5-coder:1.5b
+ollama serve
+```
+In a second terminal:
+```bash
+python tui.py
+# or
+python server.py
+```
+
+Model selection by environment variable:
+```bash
+export NEUROFORGE_MODEL=qwen2.5-coder:1.5b
+export NEUROFORGE_LLM_URL=http://127.0.0.1:11434/api/chat
+```
+
+For Android Termux, use a working **local Ollama-compatible inference server** (if your device supports it) and point `NEUROFORGE_LLM_URL` to it. If no model server is running, legacy knowledge CRUD still works; conversational mode shows a connection error. Never expose the unauthenticated app to the internet.
+
+## GitHub skill reading (not executable plugins)
+
+Menu item **7 — GitHub skill-lər** and web Skill panel accept **direct GitHub markdown file links**, e.g. `https://github.com/owner/repo/blob/main/skills/example/SKILL.md`. Each import is initially **disabled** and must be enabled manually. Imported text supplies extra context for the local LLM. It cannot automatically install packages, run arbitrary scripts, edit repository files, or make model weights learn. Review imported content; treat it as untrusted.
+
+## Roadmap to genuine autonomous improvement
+
+- Retrieval and inference: local LLM + semantic memory
+- Code tools: read workspace files, inspect DOM/HTML, generate patches, run sandboxed tests, seek approval before commits
+- Learning pipeline: log outcomes, propose distilled lessons, validate with tests and human approval
+- Optional periodic LoRA fine-tuning when hardware permits, with evaluation and rollback
+- Trust controls for skills: source review, explicit permissions, tool sandbox and secrets isolation
