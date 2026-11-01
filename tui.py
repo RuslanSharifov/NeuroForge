@@ -2,7 +2,7 @@
 import os
 import shutil
 import sys
-from main import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
+from core import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
 
 def width():
     return max(32, min(shutil.get_terminal_size(fallback=(76,24)).columns, 96))
