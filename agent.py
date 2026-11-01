@@ -42,8 +42,14 @@ def request_json(url,payload):
     parsed=urlparse(url)
     if parsed.scheme not in ("http","https"):raise ValueError("Invalid model URL")
     req=urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"Content-Type":"application/json"})
-    with urllib.request.urlopen(req,timeout=90) as resp:
-        data=json.load(resp)
+    try:
+        with urllib.request.urlopen(req,timeout=180) as resp:
+            data=json.load(resp)
+    except urllib.error.HTTPError as exc:
+        detail=exc.read(1000).decode("utf-8","replace")
+        if exc.code==503:
+            raise RuntimeError("Model hələ yüklənir və ya resurs çatışmır (HTTP 503). Server /health və ~/models/neuroforge-llama.log yoxlanılmalıdır. "+detail[:300]) from exc
+        raise RuntimeError(f"Model API HTTP {exc.code}: {detail[:300]}") from exc
     if isinstance(data,dict) and "choices" in data:
         choice=(data.get("choices") or [{}])[0]
         message=choice.get("message") or {}
