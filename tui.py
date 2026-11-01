@@ -2,7 +2,7 @@
 import os
 import shutil
 import sys
-from agent import respond, import_github_skill, skills, set_skill_active
+from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
 from core import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
 
 def width():
@@ -122,7 +122,8 @@ def skill_menu():
     ch=ask("Seçim")
     if ch=="1":
         try:
-            print(import_github_skill(ask("GitHub SKILL.md URL")))
+            url=ask("GitHub repo və ya SKILL.md URL")
+            print(import_github_skill(url) if "/blob/" in url else import_github_repo(url))
             print("Yeni skill deaktivdir; yoxladıqdan sonra aktivləşdir.")
         except Exception as exc:print("Import xətası:",exc)
     elif ch=="2":
