@@ -56,7 +56,7 @@ def ensure_local_llm():
     logfile=log_path.open("ab")
     cmd=[executable,"-m",str(MODEL_FILE),"--alias",
          os.getenv("NEUROFORGE_MODEL","qwen2.5-coder:1.5b"),
-         "--host","127.0.0.1","--port","8080","-c","2048","-np","1","-t","4"]
+         "--host","127.0.0.1","--port","8080","-c","4096","-np","1","-t","4"]
     try:
         process=subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=logfile,stderr=subprocess.STDOUT,
                                  start_new_session=True)
