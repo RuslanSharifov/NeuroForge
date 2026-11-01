@@ -10,6 +10,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 from core import DB_PATH, now
+from language import language_instruction
 
 OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 MODEL = os.getenv("NEUROFORGE_MODEL", "qwen2.5-coder:1.5b")
@@ -105,11 +106,11 @@ def respond(message):
         lessons=[dict(x) for x in c.execute("SELECT question,answer FROM knowledge WHERE enabled=1 ORDER BY id DESC LIMIT 20")]
     lessons_context="\\n".join("User-approved knowledge: "+r["question"]+" => "+r["answer"] for r in lessons)
     skill_context="\n\n".join("[Reference: "+r["name"]+"]\n"+r["body"][:8000] for r in references)
-    messages=[{"role":"system","content":SYSTEM+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
+    messages=[{"role":"system","content":SYSTEM+"\n"+language_instruction()+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
     messages.extend(history())
     messages.append({"role":"user","content":message})
     try:
-        data=request_json(OLLAMA_URL,{"model":MODEL,"messages":messages,"stream":False})
+        data=request_json(OLLAMA_URL,{"model":MODEL,"messages":messages,"stream":False,"options":{"num_predict":192}})
     except (urllib.error.URLError, TimeoutError) as e:
         return {"answer":"Lokal LLM serverinə bağlana bilmirəm. Ollama serverini işə sal və NEUROFORGE_MODEL parametrini yoxla.","error":str(e),"mode":"local_llm_unavailable"}
     answer=data.get("message",{}).get("content","").strip()
