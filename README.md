@@ -188,3 +188,7 @@ llama-server -m "$HOME/models/qwen-coder.gguf" --alias qwen2.5-coder:1.5b --host
 The default agent endpoint is `http://127.0.0.1:8080/v1/chat/completions`. If you use Ollama instead, configure `NEUROFORGE_LLM_URL` and `NEUROFORGE_MODEL` to match its server and model.
 
 Windows/Linux/macOS users must install a compatible local inference server separately. The guided installer does not silently use a third-party desktop package manager. No OS-level visibility changes are made to repositories. If distributing this project publicly, enable GitHub repository visibility manually and review LICENSE, credentials, test results and open-network security first.
+
+## v0.5.1: automatic local inference server startup
+
+After `python setup.py` has installed `llama-server` and a GGUF file, starting terminal menu **6 — AI Agent**, or sending a request to the web `/agent/run` endpoint, automatically starts the local llama.cpp server on `127.0.0.1:8080` if it is not already listening. Startup can take several seconds. Errors and logs: `~/models/neuroforge-llama.log`. Model download / package installation never occurs through this action without asking first via `setup.py`. When a custom endpoint is configured, start your own server. For Termux, Android may stop the model server under memory pressure.
