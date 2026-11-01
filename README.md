@@ -211,3 +211,14 @@ The selected model is saved in `~/.neuroforge/models.json`. The manager checks f
 **Switching models:** stop the old local server (if you started it) before opening AI Agent again. A running server will not automatically switch loaded models; the model manager does not kill user processes. On Termux, for example, `pkill llama-server` then reopen `python tui.py`, option 6. Do not kill a shared server used by other applications.
 
 The conversation adapter uses Qwen3's `/no_think` prompt setting for shorter chats. Smaller models may still be weak at Azerbaijani. The model manager is not fine-tuning or self-training.
+
+## Gemini conversation provider (opt-in)
+
+From TUI choose **11 — AI provayderi / Gemini**, select **2**, and enter a Gemini API key at the hidden prompt. The key is stored locally in `~/.neuroforge/provider.json` with best-effort user-only permissions (`0600` on Unix/Termux). It is **not encrypted at rest**. Never commit/share this file or paste a key into chat. An alternative is `GEMINI_API_KEY` environment variable. The initial model is `gemini-2.5-flash`, changeable in the menu; actual availability depends on your API account. API requests require internet and may incur costs.
+
+- Conversation in TUI and Web uses the Gemini REST `generateContent` endpoint when Gemini provider is selected.
+- The existing local GGUF remains available by switching provider back to **1**.
+- The current Gemini integration is conversation-only. Workspace tool calling and edit approval are still **local provider only**; when Gemini is selected, the workspace agent returns conversational replies without file editing.
+- A public deployment MUST add authentication and store keys server-side securely; do not expose the current unauthenticated web server. This is currently a local-only prototype.
+
+Official API reference: https://ai.google.dev/api/generate-content
