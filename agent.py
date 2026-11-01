@@ -11,7 +11,7 @@ import urllib.request
 from urllib.parse import urlparse
 from core import DB_PATH, now
 
-OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:11434/api/chat")
+OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 MODEL = os.getenv("NEUROFORGE_MODEL", "qwen2.5-coder:1.5b")
 SYSTEM = """You are NeuroForge, a conversational coding assistant. Talk naturally in the user's language.
 Understand typos using context. If asked to change div to header, understand they mean HTML tags and use
