@@ -1,5 +1,2 @@
-fastapi>=0.115,<1
-uvicorn>=0.30,<1
-pydantic>=2,<3
-pytest>=8,<10
-httpx>=0.27,<1
+# NeuroForge terminal and stdlib web server have no external dependencies.
+# Optional FastAPI development stack: pip install -r requirements-web.txt
