@@ -43,7 +43,12 @@ def request_json(url,payload):
     if parsed.scheme not in ("http","https"):raise ValueError("Invalid model URL")
     req=urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"Content-Type":"application/json"})
     with urllib.request.urlopen(req,timeout=90) as resp:
-        return json.load(resp)
+        data=json.load(resp)
+    if isinstance(data,dict) and "choices" in data:
+        choice=(data.get("choices") or [{}])[0]
+        message=choice.get("message") or {}
+        return {"message":{"role":"assistant","content":message.get("content") or "", "tool_calls":message.get("tool_calls") or []}}
+    return data
 
 def history(limit=12):
     with connect() as c:
