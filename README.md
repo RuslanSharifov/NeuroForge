@@ -198,3 +198,16 @@ After `python setup.py` has installed `llama-server` and a GGUF file, starting t
 Terminal menu **9 — Cavab dili** chooses Azerbaijani (default), Turkish or automatic language detection. Preference persists in `~/.neuroforge/settings.json` and applies to both TUI and browser chats. It is a language instruction, not a guarantee: very small code-focused models may still answer in English or misunderstand Azerbaijani.
 
 Simple conversations now omit the workspace tool schema to reduce processing latency. Code/repository requests still use tool calling. The model server remains CPU-bound on Termux and may answer slowly; response length is limited to reduce delay. Empty Enter in agent conversation is ignored.
+
+## v0.6 - Model manager (Termux-first, experimental)
+
+Use **10 — Model meneceri** in `python tui.py` or run `python models.py`.
+
+- `chat`: Qwen3 1.7B Q4_K_M (approx. 1.28 GB, multilingual conversation candidate)
+- `coder`: Qwen2.5 Coder 1.5B Q4 (existing code model)
+
+The selected model is saved in `~/.neuroforge/models.json`. The manager checks for GGUF header and minimum expected size, asks permission before downloading a missing model, and retains the existing model. The Qwen3 GGUF source is [TensorBlock](https://huggingface.co/tensorblock/Qwen_Qwen3-1.7B-GGUF); downloaded files and network availability may change. GGUF header + size validation does not replace a cryptographic checksum.
+
+**Switching models:** stop the old local server (if you started it) before opening AI Agent again. A running server will not automatically switch loaded models; the model manager does not kill user processes. On Termux, for example, `pkill llama-server` then reopen `python tui.py`, option 6. Do not kill a shared server used by other applications.
+
+The conversation adapter uses Qwen3's `/no_think` prompt setting for shorter chats. Smaller models may still be weak at Azerbaijani. The model manager is not fine-tuning or self-training.
