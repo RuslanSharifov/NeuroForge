@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from core import DB_PATH, now
 from language import language_instruction
 from model_catalog import model_info
+from providers import provider, generate
 
 OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 MODEL = os.getenv("NEUROFORGE_MODEL", "qwen2.5-coder:1.5b")
@@ -116,10 +117,10 @@ def respond(message):
     messages.extend([m for m in history(4) if not any(t in m['content'] for t in ('How can I help you today?', 'Claude products', 'I can assist you in Azerbaijani.'))])
     messages.append({"role":"user","content":message})
     active=model_info()
-    if active["key"]=="chat":
+    if provider()=="local" and active["key"]=="chat":
         messages[-1]["content"]="/no_think\n"+messages[-1]["content"]
     try:
-        data=request_json(OLLAMA_URL,{"model":os.getenv("NEUROFORGE_MODEL",active["alias"]),"messages":messages,"stream":False,"max_tokens":160,"temperature":0.65})
+        data=(generate(messages) if provider()=="gemini" else request_json(OLLAMA_URL,{"model":os.getenv("NEUROFORGE_MODEL",active["alias"]),"messages":messages,"stream":False,"max_tokens":160,"temperature":0.65}))
     except (urllib.error.URLError, TimeoutError) as e:
         return {"answer":"Lokal LLM serverinə bağlana bilmirəm. Ollama serverini işə sal və NEUROFORGE_MODEL parametrini yoxla.","error":str(e),"mode":"local_llm_unavailable"}
     answer=data.get("message",{}).get("content","").strip()
@@ -128,7 +129,7 @@ def respond(message):
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("user",message,now()))
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("assistant",answer,now()))
         c.commit()
-    return {"answer":answer,"mode":"local_llm","model":active["alias"]}
+    return {"answer":answer,"mode":provider(),"model":data.get("model",active["alias"])}
 
 def import_github_repo(url):
     """Reviewable import of markdown skills from a public GitHub repository; no code execution."""
