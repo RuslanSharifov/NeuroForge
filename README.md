@@ -7,7 +7,7 @@ Local-first AI knowledge engine with a mobile-friendly browser dashboard and ada
 ## Requirements
 
 - Python 3.10 or newer
-- No external AI API keys
+- No third-party Python dependencies for the TUI and built-in web server; no external AI API keys
 - SQLite (bundled with Python)
 
 ## Android Termux
@@ -26,7 +26,7 @@ python tui.py
 To launch the web panel instead:
 
 ```bash
-python -m uvicorn main:app --host 127.0.0.1 --port 8000
+python server.py
 ```
 
 Open **http://127.0.0.1:8000** in your Android browser.
@@ -47,10 +47,10 @@ For PowerShell, activate with `.venv\Scripts\Activate.ps1` (subject to local exe
 Start the web panel in place of the terminal UI with:
 
 ```bat
-python -m uvicorn main:app --host 127.0.0.1 --port 8000
+python server.py
 ```
 
-Open **http://127.0.0.1:8000**. API docs: **http://127.0.0.1:8000/docs**.
+Open **http://127.0.0.1:8000**. For optional FastAPI docs on desktop, install `requirements-web.txt` and start `python -m uvicorn main:app --host 127.0.0.1 --port 8000` instead.
 
 ## Linux / macOS
 
@@ -85,7 +85,7 @@ python tui.py
 | GET, POST | `/feedback` | Feedback |
 | POST | `/feedback/{id}/approve` | Approve learning |
 
-Run tests with `python -m pytest -q`.
+Run the stdlib core tests using `python -m unittest discover -s checks -v`. Optional FastAPI tests require `python -m pip install -r requirements-web.txt`.
 
 ## Security
 
@@ -98,3 +98,9 @@ Run tests with `python -m pytest -q`.
 3. Provenance, contradictions, evaluations, stronger feedback loop
 4. Small PyTorch neural experiments, controlled training
 5. Sandboxed code agent and permissions, authentication for remote web use
+
+## Termux Python 3.13 fix (pydantic-core build failed)
+
+The default `python tui.py` and `python server.py` use only Python's standard library. You do **not** need Rust, maturin, FastAPI or Pydantic. Update your clone using `git pull --ff-only` then launch either command. The optional FastAPI stack is isolated in `requirements-web.txt` for environments where Pydantic wheels are available.
+
+For Termux, keep the repository in Termux home (`~/NeuroForge`) where possible; Android shared storage can have executable/symlink limitations.
