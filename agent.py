@@ -91,8 +91,10 @@ def respond(message):
     if not message.strip():raise ValueError("Message required")
     with connect() as c:
         references=[dict(x) for x in c.execute("SELECT name,body FROM agent_skills WHERE active=1 ORDER BY id DESC LIMIT 4")]
+        lessons=[dict(x) for x in c.execute("SELECT question,answer FROM knowledge WHERE enabled=1 ORDER BY id DESC LIMIT 20")]
+    lessons_context="\\n".join("User-approved knowledge: "+r["question"]+" => "+r["answer"] for r in lessons)
     skill_context="\n\n".join("[Reference: "+r["name"]+"]\n"+r["body"][:8000] for r in references)
-    messages=[{"role":"system","content":SYSTEM+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
+    messages=[{"role":"system","content":SYSTEM+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
     messages.extend(history())
     messages.append({"role":"user","content":message})
     try:
