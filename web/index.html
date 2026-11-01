@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="az"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroForge — Local AI</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#0b1220;color:#e8f0ff}
+*{box-sizing:border-box}body{margin:0}header{background:#111d30;border-bottom:1px solid #273750;padding:17px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header strong{font-size:22px}header span,small{color:#9fb1ce}.shell{max-width:1100px;margin:auto;padding:22px;display:grid;grid-template-columns:190px minmax(0,1fr);gap:20px}
+nav{display:flex;flex-direction:column;gap:8px}.tab,button{background:#182941;color:#dbe8ff;border:1px solid #30425d;border-radius:12px;padding:12px;cursor:pointer}
+.tab.active,button.primary{background:#2563eb;color:#fff;border-color:#3774fa}button:hover{filter:brightness(1.15)}
+main{min-width:0}.panel{display:none;background:#101c2e;border:1px solid #263b58;border-radius:16px;padding:22px}.panel.active{display:block}
+h2{margin:0 0 15px}label{display:block;margin:12px 0 6px;color:#baccdf}
+input,textarea{display:block;width:100%;border:1px solid #34465e;background:#0b1526;color:#fff;border-radius:10px;padding:12px;font:inherit}
+textarea{min-height:95px;resize:vertical}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+#conversation{min-height:240px;max-height:400px;overflow:auto;background:#0b1526;border:1px solid #273b57;padding:14px;border-radius:12px;margin-bottom:12px}
+.message{margin:9px 0;padding:10px;border-radius:9px;background:#1b2a40;white-space:pre-wrap;overflow-wrap:anywhere}.message.me{background:#1b3c6b}
+.item{padding:15px;margin-top:12px;background:#15253d;border:1px solid #2a405d;border-radius:12px;overflow-wrap:anywhere}
+.item button{padding:7px 10px;margin-right:5px;margin-top:8px}.muted{color:#9fb1ce;font-size:13px}
+#notice{min-height:22px;color:#9ee8c4;margin:10px 0}
+@media(max-width:650px){.shell{grid-template-columns:1fr;padding:12px;gap:12px}nav{flex-direction:row;overflow:auto}.tab{white-space:nowrap;flex:1;padding:10px}.panel{padding:15px}header{padding:13px}header strong{font-size:19px}}
+</style></head><body>
+<header><strong>◈ NeuroForge</strong><span>Local-first AI Control Center</span></header>
+<div class="shell"><nav>
+<button class="tab active" data-tab="chat">Söhbət</button>
+<button class="tab" data-tab="knowledge">Bilik CRUD</button>
+<button class="tab" data-tab="feedback">Geribildirim</button>
+</nav><main>
+<div id="notice" role="status"></div>
+<section class="panel active" id="chat"><h2>AI ilə söhbət</h2><div id="conversation"></div>
+<form id="chatForm"><label for="message">Sualın</label><textarea id="message" required></textarea><div class="toolbar"><button class="primary">Göndər</button></div></form></section>
+<section class="panel" id="knowledge"><h2>Bilikləri idarə et</h2>
+<form id="knowledgeForm"><input type="hidden" id="knowledgeId">
+<label for="question">Sual / açar fikir</label><input id="question" required minlength="3">
+<label for="answer">Cavab / qayda</label><textarea id="answer" required></textarea>
+<label for="category">Kateqoriya</label><input id="category" value="general">
+<div class="toolbar"><button class="primary">Yadda saxla</button><button type="button" id="cancelEdit">Təmizlə</button></div></form>
+<h2 style="margin-top:28px">Öyrənilmiş biliklər</h2><div id="knowledgeList"></div></section>
+<section class="panel" id="feedback"><h2>Düzəliş təklif et</h2>
+<form id="feedbackForm"><label for="feedbackPrompt">Sual</label><input id="feedbackPrompt" required>
+<label for="feedbackAnswer">Düzgün cavab</label><textarea id="feedbackAnswer" required></textarea>
+<div class="toolbar"><button class="primary">Təklif göndər</button></div></form>
+<h2 style="margin-top:25px">Gözləyən düzəlişlər</h2><div id="feedbackList"></div></section>
+</main></div>
+<script>
+const $=id=>document.getElementById(id);
+function notify(s,error=false){$('notice').textContent=s;$('notice').style.color=error?'#fda4af':'#9ee8c4'}
+async function api(path,opts={}){const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});const d=await r.json();if(!r.ok)throw Error(typeof d.detail==='string'?d.detail:JSON.stringify(d.detail));return d}
+function node(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e}
+function btn(text,handler){const b=node('button','',text);b.type='button';b.onclick=handler;return b}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab,.panel').forEach(e=>e.classList.remove('active'));b.classList.add('active');$(b.dataset.tab).classList.add('active');if(b.dataset.tab==='knowledge')loadKnowledge();if(b.dataset.tab==='feedback')loadFeedback()});
+$('chatForm').onsubmit=async e=>{e.preventDefault();const text=$('message').value.trim();if(!text)return;$('message').value='';$('conversation').append(node('div','message me',text));try{const d=await api('/chat',{method:'POST',body:JSON.stringify({message:text})});$('conversation').append(node('div','message',d.answer+'\nMənbə: '+(d.source_id??'yoxdur')+' · Uyğunluq: '+d.confidence))}catch(err){notify(err.message,true)}$('conversation').scrollTop=$('conversation').scrollHeight};
+function resetForm(){$('knowledgeForm').reset();$('knowledgeId').value='';$('category').value='general'}
+$('cancelEdit').onclick=resetForm;
+$('knowledgeForm').onsubmit=async e=>{e.preventDefault();const id=$('knowledgeId').value;const body={question:$('question').value,answer:$('answer').value,category:$('category').value};try{await api(id?'/knowledge/'+id:'/knowledge',{method:id?'PATCH':'POST',body:JSON.stringify(body)});resetForm();notify('Bilik yadda saxlandı');loadKnowledge()}catch(err){notify(err.message,true)}};
+async function loadKnowledge(){try{const rows=await api('/knowledge');const wrap=$('knowledgeList');wrap.replaceChildren();if(!rows.length)wrap.append(node('p','muted','Hələ bilik yoxdur'));rows.forEach(r=>{const el=node('div','item');el.append(node('strong','',r.question),node('p','',r.answer),node('small','',r.category+' · '+(r.enabled?'Aktiv':'Deaktiv')));el.append(btn('Redaktə et',()=>{$('knowledgeId').value=r.id;$('question').value=r.question;$('answer').value=r.answer;$('category').value=r.category;window.scrollTo({top:0,behavior:'smooth'})}),btn(r.enabled?'Deaktiv et':'Aktiv et',async()=>{await api('/knowledge/'+r.id,{method:'PATCH',body:JSON.stringify({enabled:!r.enabled})});loadKnowledge()}),btn('Sil',async()=>{if(confirm('Bilik silinsin?')){await api('/knowledge/'+r.id,{method:'DELETE'});loadKnowledge()}}));wrap.append(el)})}catch(err){notify(err.message,true)}}
+$('feedbackForm').onsubmit=async e=>{e.preventDefault();try{await api('/feedback',{method:'POST',body:JSON.stringify({prompt:$('feedbackPrompt').value,suggested_answer:$('feedbackAnswer').value})});e.target.reset();notify('Düzəliş gözləməyə əlavə olundu');loadFeedback()}catch(err){notify(err.message,true)}};
+async function loadFeedback(){try{const rows=await api('/feedback');const wrap=$('feedbackList');wrap.replaceChildren();rows.filter(r=>!r.approved).forEach(r=>{const el=node('div','item');el.append(node('strong','',r.prompt),node('p','',r.suggested_answer),btn('Təsdiqlə',async()=>{await api('/feedback/'+r.id+'/approve',{method:'POST'});notify('Təsdiqləndi');loadFeedback()}));wrap.append(el)});if(!wrap.children.length)wrap.append(node('p','muted','Gözləyən düzəliş yoxdur'))}catch(err){notify(err.message,true)}}
+loadKnowledge();
+</script></body></html>
