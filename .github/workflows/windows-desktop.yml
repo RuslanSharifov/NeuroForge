@@ -1,0 +1,39 @@
+name: Windows desktop build
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["desktop.py", "server.py", "web/**", "requirements-desktop.txt", ".github/workflows/windows-desktop.yml"]
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build dependencies
+        run: python -m pip install -r requirements-desktop.txt
+      - name: Generate Windows icon from local SVG design
+        shell: pwsh
+        run: |
+          @'
+          from PIL import Image,ImageDraw
+          from pathlib import Path
+          im=Image.new("RGBA",(256,256),(16,27,48,255))
+          d=ImageDraw.Draw(im)
+          d.rounded_rectangle((0,0,255,255),radius=54,fill=(16,27,48))
+          d.line([(65,191),(65,66),(191,191),(191,66)],fill=(96,165,250),width=24,joint="curve")
+          d.ellipse((177,52,205,80),fill=(165,243,252))
+          Path("assets").mkdir(exist_ok=True)
+          im.save("assets/neuroforge.ico",format="ICO",sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
+          '@ | python -
+      - name: Run stdlib checks
+        run: python -m unittest discover -s checks -v
+      - name: Create portable desktop executable
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name NeuroForge --icon assets/neuroforge.ico --add-data "web;web" desktop.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NeuroForge-Windows-portable
+          path: dist/NeuroForge.exe
+          if-no-files-found: error
