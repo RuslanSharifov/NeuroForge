@@ -10,6 +10,7 @@ import uuid
 from pathlib import Path
 from agent import MODEL, OLLAMA_URL, SYSTEM, connect, history, request_json, respond, now
 from language import language_instruction
+from model_catalog import model_info
 
 ROOT = Path(os.environ.get("NEUROFORGE_WORKSPACE", os.getcwd())).expanduser().resolve()
 MAX_STEPS = 8
@@ -164,4 +165,4 @@ You may converse normally, including greetings; use tools only when needed.
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("user",message,now()))
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("assistant",final,now()))
         c.commit()
-    return {"answer":final,"model":MODEL,"mode":"tool_agent","steps":events}
+    return {"answer":final,"model":model_info()["alias"],"mode":"tool_agent","steps":events}
