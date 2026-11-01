@@ -148,7 +148,7 @@ You may converse normally, including greetings; use tools only when needed.
                 result=CALLS[name](**args)
             except Exception as exc:result={"error":str(exc)}
             events.append({"tool":name,"result":result})
-            msgs.append({"role":"tool","content":json.dumps(result,ensure_ascii=False)})
+            msgs.append({"role":"tool","tool_call_id":call.get("id",""),"content":json.dumps(result,ensure_ascii=False)})
     else:
         final="Alət addımı limitinə çatdım. İcra olunan addımlara bax."
     with connect() as c:
