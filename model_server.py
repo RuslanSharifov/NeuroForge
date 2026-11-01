@@ -8,6 +8,7 @@ import urllib.parse
 import urllib.request
 import json
 from doctor import MODEL_FILE, valid_model
+from model_catalog import model_info
 
 DEFAULT_URL="http://127.0.0.1:8080/v1/chat/completions"
 
@@ -45,8 +46,9 @@ def ensure_local_llm():
         if wait_until_ready(parsed.hostname,port,seconds=100):
             return {"ready":True,"managed":False}
         return {"ready":False,"error":"Model server portu açıqdır, amma /health hələ ready deyil. Log: ~/models/neuroforge-llama.log"}
-    if not valid_model():
-        return {"ready":False,"error":"GGUF model missing. Run python setup.py to download with consent."}
+    selected_model=model_info()
+    if not selected_model["installed"]:
+        return {"ready":False,"error":"Seçilmiş model yüklənməyib: "+selected_model["title"]+". python setup.py ilə yüklə."}
     executable=shutil.which("llama-server")
     if not executable:
         return {"ready":False,"error":"llama-server missing. Run python setup.py."}
@@ -54,9 +56,9 @@ def ensure_local_llm():
         return {"ready":False,"error":"Custom port configured; start that server manually."}
     log_path=MODEL_FILE.parent/"neuroforge-llama.log"
     logfile=log_path.open("ab")
-    cmd=[executable,"-m",str(MODEL_FILE),"--alias",
-         os.getenv("NEUROFORGE_MODEL","qwen2.5-coder:1.5b"),
-         "--host","127.0.0.1","--port","8080","-c","4096","-np","1","-t","4"]
+    cmd=[executable,"-m",selected_model["path"],"--alias",
+         selected_model["alias"],
+         "--host","127.0.0.1","--port","8080","-c","3072","-np","1","-t","4"]
     try:
         process=subprocess.Popen(cmd,stdin=subprocess.DEVNULL,stdout=logfile,stderr=subprocess.STDOUT,
                                  start_new_session=True)
