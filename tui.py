@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from model_server import ensure_local_llm
 from doctor import describe, check_update, install_server, download_model, VERSION
 from agent_runtime import agent_run, pending_edits, decide_edit
 from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
@@ -108,6 +109,11 @@ def feedback():
 
 def agent_talk():
     header("Lokal LLM söhbəti")
+    status=ensure_local_llm()
+    if not status["ready"]:
+        print(status.get("error","Model server hazır deyil"))
+        pause()
+        return
     print("Geri dönmək üçün /exit yaz.")
     while True:
         message=ask("Sən")
