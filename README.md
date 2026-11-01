@@ -140,3 +140,23 @@ Menu item **7 — GitHub skill-lər** and web Skill panel accept **direct GitHub
 - Learning pipeline: log outcomes, propose distilled lessons, validate with tests and human approval
 - Optional periodic LoRA fine-tuning when hardware permits, with evaluation and rollback
 - Trust controls for skills: source review, explicit permissions, tool sandbox and secrets isolation
+
+## v0.4 natural-language coding agent (experimental)
+
+The chat now calls a local model with tools. You can say things like: "login səhifəsini tap, div əvəzinə header istifadə etmək üçün dəyişiklik təklif et". The model can **list files, search text, read workspace files and propose a full-file patch**. Changes are **never applied automatically**: confirm the diff in TUI or Web. The agent can still have ordinary conversations and retain recent history. This is not autonomous model-weight training.
+
+Set a project as the workspace BEFORE launching NeuroForge:
+```bash
+export NEUROFORGE_WORKSPACE="$HOME/my-project"
+python tui.py
+```
+On Windows CMD:
+```bat
+set NEUROFORGE_WORKSPACE=C:\\Users\\YourUser\\Projects\\my-project
+python tui.py
+```
+Or launch `python server.py` for a browser UI. The LLM must be running at `NEUROFORGE_LLM_URL` (defaults to an Ollama-compatible endpoint at 127.0.0.1:11434) with `NEUROFORGE_MODEL` installed. Desktop example: `ollama pull qwen2.5-coder:1.5b`. On Android, set up an Android-compatible local inference server separately; there is no bundled Android model.
+
+The agent cannot run shell commands, automatically install packages, discover arbitrary private GitHub repositories or edit outside the configured workspace. GitHub SKILL.md imports are **reference documents**, not executable code. Advanced long-term learning, safe command execution, and autonomous model training remain future work.
+
+**SECURITY:** Browser app is not authenticated; keep it bound to 127.0.0.1, never expose it on a public address. Do not use the workspace containing secrets. Review each proposed edit carefully; model suggestions can be incorrect. The built-in edit endpoint is not safe for untrusted network clients.
