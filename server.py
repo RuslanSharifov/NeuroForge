@@ -4,6 +4,7 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
+from providers import provider
 from model_server import ensure_local_llm
 from agent_runtime import agent_run, pending_edits, decide_edit
 from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
@@ -70,7 +71,7 @@ class Handler(BaseHTTPRequestHandler):
                 elif len(segments)==3 and segments[2]=="history" and method=="GET":
                     result=history(ident)
             elif (method,path)==("POST","/agent/run"):
-                status=ensure_local_llm()
+                status=ensure_local_llm() if provider()=="local" else {"ready":True}
                 if not status["ready"]:raise HTTPException(503,status.get("error","Local model unavailable"))
                 result=agent_run(str(payload.get("message","")))
             elif (method,path)==("GET","/agent/edits"):
