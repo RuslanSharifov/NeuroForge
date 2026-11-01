@@ -192,3 +192,9 @@ Windows/Linux/macOS users must install a compatible local inference server separ
 ## v0.5.1: automatic local inference server startup
 
 After `python setup.py` has installed `llama-server` and a GGUF file, starting terminal menu **6 — AI Agent**, or sending a request to the web `/agent/run` endpoint, automatically starts the local llama.cpp server on `127.0.0.1:8080` if it is not already listening. Startup can take several seconds. Errors and logs: `~/models/neuroforge-llama.log`. Model download / package installation never occurs through this action without asking first via `setup.py`. When a custom endpoint is configured, start your own server. For Termux, Android may stop the model server under memory pressure.
+
+## Language and response speed
+
+Terminal menu **9 — Cavab dili** chooses Azerbaijani (default), Turkish or automatic language detection. Preference persists in `~/.neuroforge/settings.json` and applies to both TUI and browser chats. It is a language instruction, not a guarantee: very small code-focused models may still answer in English or misunderstand Azerbaijani.
+
+Simple conversations now omit the workspace tool schema to reduce processing latency. Code/repository requests still use tool calling. The model server remains CPU-bound on Termux and may answer slowly; response length is limited to reduce delay. Empty Enter in agent conversation is ignored.
