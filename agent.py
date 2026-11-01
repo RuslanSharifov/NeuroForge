@@ -42,6 +42,9 @@ def connect():
 def request_json(url,payload):
     parsed=urlparse(url)
     if parsed.scheme not in ("http","https"):raise ValueError("Invalid model URL")
+    if "/v1/chat/completions" in parsed.path:
+        payload={**payload,"max_tokens":min(int(payload.get("max_tokens",160)),192)}
+        payload.pop("options",None)
     req=urllib.request.Request(url, data=json.dumps(payload).encode(), headers={"Content-Type":"application/json"})
     try:
         with urllib.request.urlopen(req,timeout=180) as resp:
@@ -50,6 +53,8 @@ def request_json(url,payload):
         detail=exc.read(1000).decode("utf-8","replace")
         if exc.code==503:
             raise RuntimeError("Model hələ yüklənir və ya resurs çatışmır (HTTP 503). Server /health və ~/models/neuroforge-llama.log yoxlanılmalıdır. "+detail[:300]) from exc
+        if exc.code==400 and "exceeds the available context size" in detail:
+            raise RuntimeError("Kontekst limiti dolub. Serveri -c 4096 ilə yenidən başladın və ya yaddaşı azaldın. "+detail[:250]) from exc
         raise RuntimeError(f"Model API HTTP {exc.code}: {detail[:300]}") from exc
     if isinstance(data,dict) and "choices" in data:
         choice=(data.get("choices") or [{}])[0]
@@ -102,12 +107,12 @@ def import_github_skill(url):
 def respond(message):
     if not message.strip():raise ValueError("Message required")
     with connect() as c:
-        references=[dict(x) for x in c.execute("SELECT name,body FROM agent_skills WHERE active=1 ORDER BY id DESC LIMIT 4")]
-        lessons=[dict(x) for x in c.execute("SELECT question,answer FROM knowledge WHERE enabled=1 ORDER BY id DESC LIMIT 20")]
-    lessons_context="\\n".join("User-approved knowledge: "+r["question"]+" => "+r["answer"] for r in lessons)
-    skill_context="\n\n".join("[Reference: "+r["name"]+"]\n"+r["body"][:8000] for r in references)
+        references=[dict(x) for x in c.execute("SELECT name,body FROM agent_skills WHERE active=1 ORDER BY id DESC LIMIT 2")]
+        lessons=[dict(x) for x in c.execute("SELECT question,answer FROM knowledge WHERE enabled=1 ORDER BY id DESC LIMIT 4")]
+    lessons_context="\n".join("Learned: "+r["question"][:100]+" => "+r["answer"][:200] for r in lessons)
+    skill_context="\n\n".join("[Reference: "+r["name"]+"]\n"+r["body"][:900] for r in references)
     messages=[{"role":"system","content":SYSTEM+"\n"+language_instruction()+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
-    messages.extend(history())
+    messages.extend(history(4))
     messages.append({"role":"user","content":message})
     try:
         data=request_json(OLLAMA_URL,{"model":MODEL,"messages":messages,"stream":False,"options":{"num_predict":192}})
