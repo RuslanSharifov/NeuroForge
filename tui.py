@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from models import menu as models_menu
 from language import get_language,set_language,LANGS
 from model_server import ensure_local_llm
 from doctor import describe, check_update, install_server, download_model, VERSION
@@ -180,7 +181,7 @@ def main():
     with db(): pass
     while True:
         header("Local AI")
-        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  AI Agent (söhbət + kod alətləri)\n7  GitHub skill-lər\n8  Versiya və qurulum\n9  Cavab dili\n0  Çıxış")
+        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  AI Agent (söhbət + kod alətləri)\n7  GitHub skill-lər\n8  Versiya və qurulum\n9  Cavab dili\n10 Model meneceri\n0  Çıxış")
         print("─"*width())
         choice=ask("Seçimin")
         if choice=="1": talk()
@@ -192,6 +193,7 @@ def main():
         elif choice=="7": skill_menu()
         elif choice=="8": maintenance()
         elif choice=="9": language_menu()
+        elif choice=="10": models_menu()
         elif choice=="0": break
         else: print("Yanlış seçim");pause()
 
