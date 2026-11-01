@@ -31,7 +31,7 @@ def describe():
       "model_ready":model,
       "model_bytes":MODEL_FILE.stat().st_size if MODEL_FILE.exists() else 0,
       "model_configured":os.environ.get("NEUROFORGE_MODEL","qwen2.5-coder:1.5b"),
-      "api_url":os.environ.get("NEUROFORGE_LLM_URL","http://127.0.0.1:11434/api/chat"),
+      "api_url":os.environ.get("NEUROFORGE_LLM_URL","http://127.0.0.1:8080/v1/chat/completions"),
       "standard_library_mode":True
     }
 
