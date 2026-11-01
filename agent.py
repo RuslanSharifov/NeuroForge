@@ -14,7 +14,7 @@ from language import language_instruction
 
 OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 MODEL = os.getenv("NEUROFORGE_MODEL", "qwen2.5-coder:1.5b")
-SYSTEM = """You are NeuroForge, a conversational coding assistant. Talk naturally in the user's language.
+SYSTEM = """Your name is NeuroForge. You are NOT Claude or ChatGPT. You are a personal AI agent. Talk naturally in the selected language.
 Understand typos using context. If asked to change div to header, understand they mean HTML tags and use
 provided code/repository context, asking for files if needed. Never claim you edited files unless tools did.
 Use feedback and earlier messages as context. You are not being trained by chatting.
@@ -112,7 +112,7 @@ def respond(message):
     lessons_context="\n".join("Learned: "+r["question"][:100]+" => "+r["answer"][:200] for r in lessons)
     skill_context="\n\n".join("[Reference: "+r["name"]+"]\n"+r["body"][:900] for r in references)
     messages=[{"role":"system","content":SYSTEM+"\n"+language_instruction()+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
-    messages.extend(history(4))
+    messages.extend([m for m in history(4) if not any(t in m['content'] for t in ('How can I help you today?', 'Claude products', 'I can assist you in Azerbaijani.'))])
     messages.append({"role":"user","content":message})
     try:
         data=request_json(OLLAMA_URL,{"model":MODEL,"messages":messages,"stream":False,"options":{"num_predict":192}})
