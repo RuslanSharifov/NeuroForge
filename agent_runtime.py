@@ -130,7 +130,8 @@ You may converse normally, including greetings; use tools only when needed.
     events=[]
     final=""
     for step in range(MAX_STEPS):
-        data=request_json(OLLAMA_URL,{"model":MODEL,"messages":msgs,"tools":TOOLS,"stream":False})
+        print(f"[NeuroForge] AI cavabı hazırlanır: addım {step+1}/{MAX_STEPS}...",flush=True)
+        data=request_json(OLLAMA_URL,{"model":MODEL,"messages":msgs,"tools":TOOLS,"stream":False,"max_tokens":256})
         assistant=data.get("message",{})
         calls=assistant.get("tool_calls") or []
         if not calls:
