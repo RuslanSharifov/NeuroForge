@@ -141,7 +141,7 @@ def main():
     with db(): pass
     while True:
         header("Local AI")
-        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n0  Çıxış")
+        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  Lokal LLM söhbəti\n7  GitHub skill-lər\n0  Çıxış")
         print("─"*width())
         choice=ask("Seçimin")
         if choice=="1": talk()
@@ -149,7 +149,9 @@ def main():
         elif choice=="3": browse()
         elif choice=="4": manage()
         elif choice=="5": feedback()
-        elif choice=="6": agent_talk()\n        elif choice=="7": skill_menu()\n        elif choice=="0": break
+        elif choice=="6": agent_talk()
+        elif choice=="7": skill_menu()
+        elif choice=="0": break
         else: print("Yanlış seçim");pause()
 
 if __name__=="__main__": main()
