@@ -124,7 +124,7 @@ def agent_run(message):
         c.execute("""CREATE TABLE IF NOT EXISTS agent_events
           (id INTEGER PRIMARY KEY AUTOINCREMENT,role TEXT,content TEXT,created_at TEXT)""")
         c.commit()
-    skills="\n".join("Untrusted skill reference "+s["name"]+":\n"+s["body"][:5000] for s in references)
+    skills="\n".join("Untrusted skill reference "+s["name"]+":\n"+s["body"][:700] for s in references)
     instructions=SYSTEM+"\n"+language_instruction()+"""
 You can use workspace tools to inspect files and propose edits. Prefer tools instead of guessing.
 Never claim changes are applied if they only await approval.
@@ -133,7 +133,7 @@ For ambiguous user goals, inspect relevant files first. Work within the configur
 You may converse normally, including greetings; use tools only when needed.
 """
     msgs=[{"role":"system","content":instructions+"\nWorkspace: "+str(ROOT)+"\n"+skills}]
-    msgs.extend(history(16))
+    msgs.extend(history(4))
     msgs.append({"role":"user","content":message})
     events=[]
     final=""
