@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from agent import respond, import_github_skill, skills, set_skill_active
 from core import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
 
 def width():
@@ -103,6 +104,39 @@ def feedback():
         else: print("Gözləyən düzəliş yoxdur")
     pause()
 
+def agent_talk():
+    header("Lokal LLM söhbəti")
+    print("Geri dönmək üçün /exit yaz.")
+    while True:
+        message=ask("Sən")
+        if message.lower() in ("/exit","/quit"): return
+        try:
+            result=respond(message)
+            print("AI:",result["answer"])
+        except Exception as exc:
+            print("LLM xətası:",exc)
+
+def skill_menu():
+    header("GitHub bacarıqları")
+    print("1 Markdown skill URL import et  2 Skill-lərə bax/aktivləşdir")
+    ch=ask("Seçim")
+    if ch=="1":
+        try:
+            print(import_github_skill(ask("GitHub SKILL.md URL")))
+            print("Yeni skill deaktivdir; yoxladıqdan sonra aktivləşdir.")
+        except Exception as exc:print("Import xətası:",exc)
+    elif ch=="2":
+        rows=skills()
+        for r in rows:print(f'#{r["id"]} [{"ON" if r["active"] else "OFF"}] {crop(r["name"],25)}')
+        if rows:
+            try:
+                ident=int(ask("Skill ID (0=geri)"))
+                if ident in [r["id"] for r in rows]:
+                    active=ask("Aktivləşsin? (h/y)").lower()=="h"
+                    print(set_skill_active(ident,active))
+            except (ValueError,TypeError) as exc:print(exc)
+    pause()
+
 def main():
     with db(): pass
     while True:
@@ -115,7 +149,7 @@ def main():
         elif choice=="3": browse()
         elif choice=="4": manage()
         elif choice=="5": feedback()
-        elif choice=="0": break
+        elif choice=="6": agent_talk()\n        elif choice=="7": skill_menu()\n        elif choice=="0": break
         else: print("Yanlış seçim");pause()
 
 if __name__=="__main__": main()
