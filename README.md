@@ -160,3 +160,31 @@ Or launch `python server.py` for a browser UI. The LLM must be running at `NEURO
 The agent cannot run shell commands, automatically install packages, discover arbitrary private GitHub repositories or edit outside the configured workspace. GitHub SKILL.md imports are **reference documents**, not executable code. Advanced long-term learning, safe command execution, and autonomous model training remain future work.
 
 **SECURITY:** Browser app is not authenticated; keep it bound to 127.0.0.1, never expose it on a public address. Do not use the workspace containing secrets. Review each proposed edit carefully; model suggestions can be incorrect. The built-in edit endpoint is not safe for untrusted network clients.
+
+## Public-user guided installation (v0.5)
+
+The TUI and the standard-library web server still have **no pip dependencies**. Termux users can run:
+
+```bash
+git clone https://github.com/RuslanSharifov/NeuroForge.git
+cd NeuroForge
+python setup.py
+python doctor.py --check-updates
+python tui.py
+```
+
+- `python setup.py`: checks Python, `llama-server`, and the GGUF model, asks permission separately before installing packages and downloading the model. It does not automatically execute commands without consent, and doesn't reinstall items that are detected.
+- `python doctor.py`: inspection only, no changes.
+- `python doctor.py --install`: offers to repair missing Termux dependencies / model.
+- TUI menu **8 — Versiya və qurulum**: checks status, compares published project version, offers missing components. Updates are *suggested*, not silently installed.
+- `python server.py`: starts the local browser UI.
+
+Run the local inference server in a separate terminal after setup:
+
+```bash
+llama-server -m "$HOME/models/qwen-coder.gguf" --alias qwen2.5-coder:1.5b --host 127.0.0.1 --port 8080 -c 2048 -np 1 -t 4
+```
+
+The default agent endpoint is `http://127.0.0.1:8080/v1/chat/completions`. If you use Ollama instead, configure `NEUROFORGE_LLM_URL` and `NEUROFORGE_MODEL` to match its server and model.
+
+Windows/Linux/macOS users must install a compatible local inference server separately. The guided installer does not silently use a third-party desktop package manager. No OS-level visibility changes are made to repositories. If distributing this project publicly, enable GitHub repository visibility manually and review LICENSE, credentials, test results and open-network security first.
