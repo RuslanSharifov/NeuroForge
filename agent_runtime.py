@@ -11,6 +11,7 @@ from pathlib import Path
 from agent import MODEL, OLLAMA_URL, SYSTEM, connect, history, request_json, respond, now
 from language import language_instruction
 from model_catalog import model_info
+from providers import provider
 
 ROOT = Path(os.environ.get("NEUROFORGE_WORKSPACE", os.getcwd())).expanduser().resolve()
 MAX_STEPS = 8
@@ -113,6 +114,11 @@ CALLS={"list_files":tool_list_files,"read_file":tool_read_file,
 
 def agent_run(message):
     if not isinstance(message,str) or not message.strip():raise ValueError("Message required")
+    # Gemini currently handles conversation only; code-tool calls remain local-only.
+    if provider()=="gemini":
+        result=respond(message)
+        result.setdefault("steps",[])
+        return result
     # Ordinary conversation skips large tool schemas to reduce prompt-processing latency.
     import re
     workspace_intent = bool(re.search(r"(fayl|file|repo|proyekt|project|kodda|kodun|edit|dəyiş|deyis|əvəz|evez|düzəlt|duzelt|read_file|index\\.html|\.py\\b|\.tsx\\b|\.jsx\\b)",message,re.IGNORECASE))
