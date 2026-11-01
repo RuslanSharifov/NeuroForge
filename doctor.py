@@ -18,9 +18,15 @@ MIN_MODEL_BYTES=500_000_000
 def termux():
     return "com.termux" in os.environ.get("PREFIX","") or "com.termux" in sys.executable
 
+def valid_model():
+    if not MODEL_FILE.exists() or MODEL_FILE.stat().st_size<MIN_MODEL_BYTES:return False
+    try:
+        with MODEL_FILE.open("rb") as stream:return stream.read(4)==b"GGUF"
+    except OSError:return False
+
 def describe():
     server=shutil.which("llama-server")
-    model=MODEL_FILE.exists() and MODEL_FILE.stat().st_size>=MIN_MODEL_BYTES
+    model=valid_model()
     return {
       "version":VERSION,
       "python":platform.python_version(),
@@ -60,7 +66,7 @@ def install_server(assume_yes=False):
     return False
 
 def download_model(assume_yes=False):
-    if MODEL_FILE.exists() and MODEL_FILE.stat().st_size>=MIN_MODEL_BYTES:
+    if valid_model():
         print("Model file exists:",MODEL_FILE)
         return True
     print("Download source:",MODEL_URL)
@@ -81,6 +87,8 @@ def download_model(assume_yes=False):
                     print(f"Downloaded {total//1048576} MiB",end="\r",flush=True)
         if partial.stat().st_size<MIN_MODEL_BYTES:
             raise ValueError("Download is incomplete or not a valid model size")
+        with partial.open("rb") as stream:
+            if stream.read(4)!=b"GGUF":raise ValueError("Downloaded file is not GGUF")
         partial.replace(MODEL_FILE)
         print("\nModel installed:",MODEL_FILE)
         return True
