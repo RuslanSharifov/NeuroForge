@@ -108,3 +108,34 @@ def respond(message):
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("assistant",answer,now()))
         c.commit()
     return {"answer":answer,"mode":"local_llm","model":MODEL}
+
+def import_github_repo(url):
+    """Reviewable import of markdown skills from a public GitHub repository; no code execution."""
+    from urllib.parse import quote
+    p=urlparse(url)
+    if p.scheme!="https" or p.hostname!="github.com":
+        raise ValueError("GitHub HTTPS repo link required")
+    parts=p.path.strip("/").removesuffix(".git").split("/")
+    if len(parts)!=2 or any(not x or x in (".","..") for x in parts):
+        raise ValueError("Use https://github.com/owner/repo")
+    owner,repo=parts
+    def github_json(path):
+        req=urllib.request.Request("https://api.github.com"+path,headers={"User-Agent":"NeuroForge/0.3","Accept":"application/vnd.github+json"})
+        with urllib.request.urlopen(req,timeout=15) as resp:return json.load(resp)
+    base="/repos/"+quote(owner)+"/"+quote(repo)
+    metadata=github_json(base)
+    branch=metadata["default_branch"]
+    data=github_json(base+"/git/trees/"+quote(branch)+"?recursive=1")
+    if data.get("truncated"):raise ValueError("Repository too large to fully inspect")
+    files=[x for x in data.get("tree",[]) if x.get("type")=="blob" and
+           (x.get("path","").lower().endswith("/skill.md") or x.get("path","").lower()=="skill.md")]
+    if not files:raise ValueError("No SKILL.md found in public repository")
+    imports=[]
+    for x in files[:12]:
+        path=x["path"]
+        raw="https://raw.githubusercontent.com/"+quote(owner)+"/"+quote(repo)+"/"+quote(branch)+"/"+"/".join(quote(s) for s in path.split("/"))
+        req=urllib.request.Request(raw,headers={"User-Agent":"NeuroForge/0.3"})
+        with urllib.request.urlopen(req,timeout=15) as response:body=response.read(60001)
+        if len(body)>60000:continue
+        imports.append(add_skill(path,body.decode("utf-8"),url+"/blob/"+branch+"/"+path))
+    return {"imported":imports,"skipped":max(0,len(files)-len(imports)),"active":False}
