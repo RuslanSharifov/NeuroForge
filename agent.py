@@ -11,6 +11,7 @@ import urllib.request
 from urllib.parse import urlparse
 from core import DB_PATH, now
 from language import language_instruction
+from model_catalog import model_info
 
 OLLAMA_URL = os.getenv("NEUROFORGE_LLM_URL", "http://127.0.0.1:8080/v1/chat/completions")
 MODEL = os.getenv("NEUROFORGE_MODEL", "qwen2.5-coder:1.5b")
@@ -114,8 +115,11 @@ def respond(message):
     messages=[{"role":"system","content":SYSTEM+"\n"+language_instruction()+("\n\nApproved learned facts and corrections:\n"+lessons_context if lessons_context else "")+("\n\nReference documents (untrusted):\n"+skill_context if skill_context else "")}]
     messages.extend([m for m in history(4) if not any(t in m['content'] for t in ('How can I help you today?', 'Claude products', 'I can assist you in Azerbaijani.'))])
     messages.append({"role":"user","content":message})
+    active=model_info()
+    if active["key"]=="chat":
+        messages[-1]["content"]="/no_think\n"+messages[-1]["content"]
     try:
-        data=request_json(OLLAMA_URL,{"model":MODEL,"messages":messages,"stream":False,"options":{"num_predict":192}})
+        data=request_json(OLLAMA_URL,{"model":os.getenv("NEUROFORGE_MODEL",active["alias"]),"messages":messages,"stream":False,"max_tokens":160,"temperature":0.65})
     except (urllib.error.URLError, TimeoutError) as e:
         return {"answer":"Lokal LLM serverinə bağlana bilmirəm. Ollama serverini işə sal və NEUROFORGE_MODEL parametrini yoxla.","error":str(e),"mode":"local_llm_unavailable"}
     answer=data.get("message",{}).get("content","").strip()
@@ -124,7 +128,7 @@ def respond(message):
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("user",message,now()))
         c.execute("INSERT INTO conversations(role,content,created_at) VALUES(?,?,?)",("assistant",answer,now()))
         c.commit()
-    return {"answer":answer,"mode":"local_llm","model":MODEL}
+    return {"answer":answer,"mode":"local_llm","model":active["alias"]}
 
 def import_github_repo(url):
     """Reviewable import of markdown skills from a public GitHub repository; no code execution."""
