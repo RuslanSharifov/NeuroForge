@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from agent_runtime import agent_run, pending_edits, decide_edit
 from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
 from core import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
 
@@ -111,7 +112,7 @@ def agent_talk():
         message=ask("Sən")
         if message.lower() in ("/exit","/quit"): return
         try:
-            result=respond(message)
+            result=agent_run(message)
             print("AI:",result["answer"])
         except Exception as exc:
             print("LLM xətası:",exc)
@@ -142,7 +143,7 @@ def main():
     with db(): pass
     while True:
         header("Local AI")
-        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  Lokal LLM söhbəti\n7  GitHub skill-lər\n0  Çıxış")
+        print("1  AI ilə söhbət\n2  Bilik öyrət\n3  Bilikləri göstər\n4  Bilik dəyiş / sil\n5  Geribildirim\n6  AI Agent (söhbət + kod alətləri)\n7  GitHub skill-lər\n0  Çıxış")
         print("─"*width())
         choice=ask("Seçimin")
         if choice=="1": talk()
