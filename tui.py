@@ -2,6 +2,7 @@
 import os
 import shutil
 import sys
+from doctor import describe, check_update, install_server, download_model, VERSION
 from agent_runtime import agent_run, pending_edits, decide_edit
 from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
 from core import db, chat, list_knowledge, create_knowledge, patch_knowledge, delete_knowledge, list_feedback, create_feedback, approve_feedback, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn
@@ -139,6 +140,25 @@ def skill_menu():
             except (ValueError,TypeError) as exc:print(exc)
     pause()
 
+def maintenance():
+    header("Version / Setup")
+    info=describe()
+    print("Version:",VERSION)
+    print("llama-server:", "OK" if info["llama_server"] else "NOT INSTALLED")
+    print("Model:", "OK" if info["model_ready"] else "MISSING")
+    print("Python:",info["python"])
+    print("1  Check GitHub version")
+    print("2  Offer to install missing components")
+    choice=ask("Seçim")
+    if choice=="1":
+        print(check_update())
+        print("To review changes, run git fetch origin main and git log HEAD..origin/main")
+        print("After reviewing, update with git pull --ff-only origin main")
+    elif choice=="2":
+        if not info["llama_server"]:install_server()
+        if not info["model_ready"]:download_model()
+    pause()
+
 def main():
     with db(): pass
     while True:
@@ -152,7 +172,7 @@ def main():
         elif choice=="4": manage()
         elif choice=="5": feedback()
         elif choice=="6": agent_talk()
-        elif choice=="7": skill_menu()
+        elif choice=="7": skill_menu()\n        elif choice=="8": maintenance()
         elif choice=="0": break
         else: print("Yanlış seçim");pause()
 
