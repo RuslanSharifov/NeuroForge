@@ -37,7 +37,25 @@ class Handler(BaseHTTPRequestHandler):
         self.dispatch("DELETE")
 
     def dispatch(self, method):
+        # Reject cross-site state-changing requests; the API is local and unauthenticated.
+        if method in ("POST","PATCH","DELETE"):
+            from urllib.parse import urlparse
+            origin=self.headers.get("Origin")
+            if origin:
+                parsed=urlparse(origin)
+                host=self.headers.get("Host","").lower()
+                if parsed.scheme!="http" or parsed.netloc.lower()!=host:
+                    return self.send_json({"detail":"Invalid origin"},403)
         path=urlsplit(self.path).path.rstrip("/") or "/"
+        if method=="GET" and path=="/logo.svg":
+            raw=(Path(__file__).parent/"web"/"logo.svg").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type","image/svg+xml")
+            self.send_header("Content-Length",str(len(raw)))
+            self.send_header("X-Content-Type-Options","nosniff")
+            self.end_headers()
+            self.wfile.write(raw)
+            return
         if method=="GET" and path=="/":
             raw=(Path(__file__).parent/"web"/"index.html").read_bytes()
             self.send_response(200)
