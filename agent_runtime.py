@@ -8,7 +8,7 @@ import os
 import sqlite3
 import uuid
 from pathlib import Path
-from agent import MODEL, OLLAMA_URL, SYSTEM, connect, history, request_json, now
+from agent import MODEL, OLLAMA_URL, SYSTEM, connect, history, request_json, respond, now
 from language import language_instruction
 
 ROOT = Path(os.environ.get("NEUROFORGE_WORKSPACE", os.getcwd())).expanduser().resolve()
@@ -112,6 +112,13 @@ CALLS={"list_files":tool_list_files,"read_file":tool_read_file,
 
 def agent_run(message):
     if not isinstance(message,str) or not message.strip():raise ValueError("Message required")
+    # Ordinary conversation skips large tool schemas to reduce prompt-processing latency.
+    import re
+    workspace_intent = bool(re.search(r"(fayl|file|repo|proyekt|project|kodda|kodun|edit|dəyiş|deyis|əvəz|evez|düzəlt|duzelt|read_file|index\\.html|\.py\\b|\.tsx\\b|\.jsx\\b)",message,re.IGNORECASE))
+    if not workspace_intent:
+        result=respond(message)
+        result.setdefault("steps",[])
+        return result
     with connect() as c:
         references=[dict(x) for x in c.execute("SELECT name,body FROM agent_skills WHERE active=1 ORDER BY id DESC LIMIT 3")]
         c.execute("""CREATE TABLE IF NOT EXISTS agent_events
