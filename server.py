@@ -4,7 +4,7 @@ import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
-from agent import respond, import_github_skill, skills, set_skill_active
+from agent import respond, import_github_skill, import_github_repo, skills, set_skill_active
 from core import (
     HTTPException, KnowledgeIn, KnowledgePatch, ChatIn, FeedbackIn,
     db, health, create_knowledge, list_knowledge, get_knowledge,
@@ -72,7 +72,7 @@ class Handler(BaseHTTPRequestHandler):
             elif (method,path)==("GET","/agent/skills"):
                 result=skills()
             elif (method,path)==("POST","/agent/skills/import"):
-                result=import_github_skill(str(payload.get("url","")));status=201
+                result=(import_github_repo(str(payload.get("url",""))) if "/blob/" not in str(payload.get("url","")) else import_github_skill(str(payload.get("url",""))));status=201
             elif len(segments)==4 and segments[:2]==["agent","skills"] and segments[2].isdigit() and segments[3]=="activate" and method=="POST":
                 result=set_skill_active(int(segments[2]),bool(payload.get("active",False)))
             elif (method,path)==("POST","/chat"):
